@@ -2,11 +2,10 @@
 #![no_std]
 #![no_main]
 use core::panic::PanicInfo;
-use rust_os::{exit_qemu, QemuExitCode, serial_println,serial_print};
-use x86_64::structures::idt::InterruptStackFrame;
 use lazy_static::lazy_static;
+use rust_os::{exit_qemu, serial_print, serial_println, QemuExitCode};
 use x86_64::structures::idt::InterruptDescriptorTable;
-
+use x86_64::structures::idt::InterruptStackFrame;
 
 lazy_static! {
     static ref TEST_IDT: InterruptDescriptorTable = {
