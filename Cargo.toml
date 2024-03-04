@@ -14,15 +14,20 @@ edition = "2021"
 # panic = "abort" # disable stack unwinding on panic
 
 [dependencies]
-bootloader = "=0.9.27"
 volatile = "=0.2.6"
 spin = "=0.5.2"
 x86_64 = "0.14.2"
 uart_16550 = "0.2.0"
+pic8259 = "0.10.1"
+pc-keyboard = "0.5.0"
 
 [dependencies.lazy_static]
 version = "1.0"
 features = ["spin_no_std"]
+
+[dependencies.bootloader]
+version = "0.9.27"
+features = ["map_physical_memory"]
 
 [package.metadata.bootimage]
 test-args = [
@@ -38,4 +43,7 @@ test-success-exit-code = 33 #(0x10 << 1) | 1
 
 [[test]]
 name = "should_panic"
+harness = false
+[[test]]
+name = "stack_overflow"
 harness = false

@@ -1,7 +1,7 @@
-use core::fmt::{Write,Result,Arguments};
-use volatile::Volatile;
-use spin::Mutex;
+use core::fmt::{Arguments, Result, Write};
 use lazy_static::lazy_static;
+use spin::Mutex;
+use volatile::Volatile;
 
 lazy_static! {
     pub static ref WRITER: Mutex<Writer> = Mutex::new(Writer {
@@ -11,7 +11,7 @@ lazy_static! {
     });
 }
 
-///The standard color palette for VGA text mode 
+///The standard color palette for VGA text mode
 #[allow(dead_code)]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[repr(u8)]
@@ -62,7 +62,7 @@ const BUFFER_WIDTH: usize = 80;
 /// A structure representing the VGA text buffer.
 #[repr(transparent)]
 struct Buffer {
-    chars:[[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
+    chars: [[Volatile<ScreenChar>; BUFFER_WIDTH]; BUFFER_HEIGHT],
 }
 
 /// A writer type that allows writing ASCII bytes and strings to an underlying `Buffer`.
@@ -75,15 +75,15 @@ pub struct Writer {
     buffer: &'static mut Buffer,
 }
 
-impl Writer{
-     /// Writes an ASCII byte to the buffer.
+impl Writer {
+    /// Writes an ASCII byte to the buffer.
     ///
     /// Wraps lines at `BUFFER_WIDTH`. Supports the `\n` newline character.
-    pub fn write_byte(&mut self, byte:u8){
-        match byte{
+    pub fn write_byte(&mut self, byte: u8) {
+        match byte {
             b'\n' => self.new_line(),
             byte => {
-                if self.column_position >= BUFFER_WIDTH{
+                if self.column_position >= BUFFER_WIDTH {
                     self.new_line();
                 }
 
@@ -113,12 +113,11 @@ impl Writer{
                 // not part of printable ASCII range
                 _ => self.write_byte(0xfe),
             }
-
         }
     }
 
     /// Shifts all lines one line up and clears the last row.
-    fn new_line(&mut self){
+    fn new_line(&mut self) {
         for row in 1..BUFFER_HEIGHT {
             for col in 0..BUFFER_WIDTH {
                 let character = self.buffer.chars[row][col].read();
@@ -139,7 +138,6 @@ impl Writer{
         }
     }
 }
-
 
 impl Write for Writer {
     fn write_str(&mut self, s: &str) -> Result {
@@ -162,7 +160,10 @@ macro_rules! println {
 }
 #[doc(hidden)]
 pub fn _print(args: Arguments) {
-    WRITER.lock().write_fmt(args).unwrap();
+    use x86_64::instructions::interrupts;
+    interrupts::without_interrupts(|| {
+        WRITER.lock().write_fmt(args).unwrap();
+    });
 }
 
 #[test_case]
@@ -179,10 +180,17 @@ fn test_println_many() {
 
 #[test_case]
 fn test_println_output() {
-  let s= "Some test string that fits on a single line";
-  println!("{}", s);
-  for(i, c) in s.chars().enumerate(){
-      let screen_char = WRITER.lock().buffer.chars[BUFFER_HEIGHT - 2][i].read();
-      assert_eq!(char::from(screen_char.ascii_character), c);
-  }
+    use core::fmt::Write;
+    use x86_64::instructions::interrupts;
+
+    let s = "Some test string that fits on a single line";
+    interrupts::without_interrupts(|| {
+        let mut writer = WRITER.lock();
+        writeln!(writer, "\n{}", s).expect("writeln failed");
+        for (i, c) in s.chars().enumerate() {
+            let screen_char = writer.buffer.chars[BUFFER_HEIGHT - 2][i].read();
+            assert_eq!(char::from(screen_char.ascii_character), c);
+        }
+    });
+
 }
