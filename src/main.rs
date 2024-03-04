@@ -13,6 +13,13 @@ pub extern "C" fn _start() -> ! {
 
     rust_os::init();
 
+    use x86_64::registers::control::Cr3;
+
+    let (level_4_page_table, _) = Cr3::read();
+    println!(
+        "Level 4 page table at: {:?}",
+        level_4_page_table.start_address()
+    );
     #[cfg(test)]
     test_main();
 
@@ -25,7 +32,7 @@ pub extern "C" fn _start() -> ! {
 #[panic_handler]
 fn panic(info: &PanicInfo) -> ! {
     println!("{}", info);
-     rust_os::hlt_loop();
+    rust_os::hlt_loop();
 }
 
 #[cfg(test)]
