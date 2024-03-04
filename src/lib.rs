@@ -5,13 +5,18 @@
 #![test_runner(crate::test_runner)]
 #![reexport_test_harness_main = "test_main"]
 
+#[cfg(test)]
+use bootloader::{entry_point, BootInfo};
 use core::panic::PanicInfo;
 
 pub mod gdt;
 pub mod interrupts;
+pub mod memory;
 pub mod serial;
 pub mod vga_buffer;
 
+#[cfg(test)]
+entry_point!(test_kernel_main);
 pub trait Testable {
     fn run(&self) -> ();
 }
@@ -58,14 +63,12 @@ pub fn exit_qemu(exit_code: QemuExitCode) {
 }
 /// Entry point for `cargo xtest`
 #[cfg(test)]
-#[no_mangle]
-pub extern "C" fn _start() -> ! {
+fn test_kernel_main(_boot_info: &'static BootInfo) -> ! {
+    // like before
     init();
     test_main();
     hlt_loop();
 }
-
-
 
 #[cfg(test)]
 #[panic_handler]
