@@ -7,9 +7,9 @@
 extern crate alloc;
 
 use bootloader::{entry_point, BootInfo};
+use rust_os::task::executor::Executor;
 use core::panic::PanicInfo;
 use rust_os::memory::{self, BootInfoFrameAllocator};
-use rust_os::task::simple_executor::SimpleExecutor;
 use rust_os::task::{keyboard, Task};
 use rust_os::{allocator, println};
 use x86_64::VirtAddr;
@@ -26,16 +26,13 @@ fn kernel_main(boot_info: &'static BootInfo) -> ! {
 
     allocator::init_heap(&mut mapper, &mut frame_allocator).expect("heap initialization failed");
 
-    let mut executor = SimpleExecutor::new();
-    executor.spawn(Task::new(example_task()));
-    executor.spawn(Task::new(keyboard::print_keypresses()));
-    executor.run();
-
     #[cfg(test)]
     test_main();
 
-    println!("It did not crash!");
-    rust_os::hlt_loop();
+    let mut executor = Executor::new();
+    executor.spawn(Task::new(example_task()));
+    executor.spawn(Task::new(keyboard::print_keypresses()));
+    executor.run();
 }
 
 /// This function is called on panic.
