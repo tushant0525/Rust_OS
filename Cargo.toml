@@ -30,6 +30,20 @@ features = ["spin_no_std"]
 version = "0.9.27"
 features = ["map_physical_memory"]
 
+[dependencies.crossbeam-queue]
+version = "0.2.1"
+default-features = false
+features = ["alloc"]
+
+[dependencies.conquer-once]
+version = "0.2.0"
+default-features = false
+
+[dependencies.futures-util]
+version = "0.3.4"
+default-features = false
+features = ["alloc"]
+
 [package.metadata.bootimage]
 test-args = [
     "-device",
